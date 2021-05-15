@@ -11,7 +11,7 @@ df.dropna(subset=["P_S6P60"], inplace=True)
 no_nan_len = len(df)
 delta1 = start_len - no_nan_len
 
-#resetee los índices y no intente guardarlos en el dataframe
+#resete de los índices y no intente guardarlos en el dataframe
 df.reset_index(drop=True, inplace=True)
 
 #obtiene un subdataframe con todos los datos inconsistentes
