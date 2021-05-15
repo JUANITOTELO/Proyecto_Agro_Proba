@@ -36,7 +36,16 @@ summarise(anio = P_S6P47B,
           dif_ds_cosechada = ds_area_cosechada - ds_area_cosechada_f)
 print(diferencia_filtro)
 
+valores_modificados = filter(diferencia_filtro, diferencia_filtro[,2:5] != 0)
+disminucion_valores = filter(valores_modificados, valores_modificados[,2:5] > 0)
+aumento_valores = filter(valores_modificados, valores_modificados[,2:5] < 0)
+print("Valores que cambiaron despues del filtro:")
+print(valores_modificados)
+print(disminucion_valores)
+print(aumento_valores)
+
 pdf(file="dif-media-ds-area-sembrada-cosechada-smooth.pdf", width=9, height=16)
 mdss = ggplot(diferencia_filtro[4:67,], aes(x=anio, y=dif_media_sembrada, color=dif_ds_sembrada))+labs(color="Diferencia Desviación Estándar\n",x = "Año", y = "Diferencia Media de área Sembrada (Ha)", title = "Diferencia Media y Desviación Estándar del Área Sembrada")+geom_point( size = 5, alpha = 1/2)+scale_color_gradient(low = "blue", high = "green", na.value = NA)
 mdsc = ggplot(diferencia_filtro[4:67,], aes(x=anio, y=dif_media_cosechada, color=dif_ds_cosechada))+labs(color="Diferencia Desviación Estándar\n",x = "Año", y = "Diferencia Media de área Cosechada (Ha)", title = "Diferencia Media y Desviación Estándar del Área Cosechada")+geom_point( size = 5, alpha = 1/2)+scale_color_gradient(low = "blue", high = "green", na.value = NA)
 ggarrange(mdss, mdsc, ncol = 1, nrow = 2)
+
