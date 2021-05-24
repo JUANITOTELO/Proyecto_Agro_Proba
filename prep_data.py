@@ -1,8 +1,22 @@
+import zipfile
 import pandas as pd
+
+#Extracción del zip del archivo cultivos_nacional.zip 
+#para el filtrado de datos
+zfile = "./documentos/cultivos_nacional.zip"
+
+try: 
+    with zipfile.ZipFile(zfile) as z:
+        z.extractall("./documentos/")
+        print("Extracción exitosa del archivo '{}'".format(zfile))
+
+except:
+        print("Extracción fallida del archivo '{}'".format(zfile))
+
 
 #lectura del archivo csv filtrando solo por 
 #las columnas que nos son de interés
-df = pd.read_csv("./cultivos_nacional.csv", usecols = ["P_S6P47B","P_DEPTO","P_S6P59_UNIF","P_S6P60","AREA_SEMBRADA","AREA_COSECHADA"])
+df = pd.read_csv("./documentos/cultivos_nacional.csv", usecols = ["P_S6P46", "P_S6P47B","P_DEPTO","P_S6P59_UNIF","P_S6P60","AREA_SEMBRADA","AREA_COSECHADA"])
 start_len = len(df)
 
 #borrado de los datos que tienen un NaN en la
@@ -37,7 +51,7 @@ print("\n")
 
 print(df.head(5))
 
-df.to_csv("cultivos_nacional_filtrado.csv", index=False)
+df.to_csv("./documentos/cultivos_nacional_filtrado.csv", index=False)
 
 #documentación usada:
 #1) https://www.statology.org/drop-na-pandas/
