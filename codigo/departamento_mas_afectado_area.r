@@ -2,8 +2,8 @@ library(dplyr)
 library(tidyverse)
 library(ggplot2)
 #Leer tablas
-cultivos_code2name <- read.table("/gdrive/MyDrive/Proyecto_Probabilidad/probabilidad/equivalencias_cultivos_code.csv", sep=",", header=TRUE)
-regre <- read.table("/gdrive/MyDrive/Proyecto_Probabilidad/probabilidad/cultivos_nacional_filtrado.csv", sep=",", header=TRUE)
+cultivos_code2name <- read.table("equivalencias_cultivos_code.csv", sep=",", header=TRUE)
+regre <- read.table("cultivos_nacional_filtrado.csv", sep=",", header=TRUE)
 #Total del area sembrada desde 1920 hasta 2013 de cada departamento
 suma_areas_sembradas = regre %>%
 group_by(P_DEPTO) %>%
