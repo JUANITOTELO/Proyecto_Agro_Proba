@@ -241,7 +241,6 @@ Se puede concluir que con total certeza hay una diferencia considerable en las m
 
 A partir de aqui haremos la prueba de hipotesis con todos los cultivos. Esta sera:
 
-
 $\alpha = 0.05$
 
 $h_o: \mu_1 - \mu_2 \geq 0$ 
@@ -417,6 +416,7 @@ sd_med_n_tstudent["sp"] = sqrt(((sd_med_n_tstudent$n_feliz-1)*(sd_med_n_tstudent
 ```
 
 Cálculo de la ***t-student***:
+
 
 ```{r}
 sd_med_n_tstudent["tstudent"] = (sd_med_n_tstudent$medias_diff)/(sd_med_n_tstudent$sp*(sqrt((1/sd_med_n_tstudent$n_feliz) +(1/sd_med_n_tstudent$n_triste))))
