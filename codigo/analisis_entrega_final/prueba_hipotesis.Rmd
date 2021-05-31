@@ -181,7 +181,7 @@ print(c(sd_1, sd_2))
 ```
 
 
-cálculo del estadístico de prueba (dado el tamaño de n se puede normalizar).
+cálculo del estadístico de prueba de solo platano como ejemplo (dado el tamaño de n se puede normalizar).
 
 $\alpha = 0.05$
 
@@ -239,11 +239,23 @@ Se puede concluir que con total certeza hay una diferencia considerable en las m
 
 -----
 
-A partir de aqui haremos esta misma prueba de hipotesis pero para todas las especies de cultivos.
+A partir de aqui haremos la prueba de hipotesis con todos los cultivos. Esta sera:
+
+
+$\alpha = 0.05$
+
+$h_o: \mu_1 - \mu_2 \geq 0$ 
+
+$h_a: \mu_1 - \mu_2 < 0$ 
+
+$RR: \{z: z < z_{\alpha} \}$
+
+Comenzamos hallando todos los parametros necesarios para hallar z, los cuales se iran agregando a la tabla como nuevas columnas despues de hallarlos.
 
 ```{r}
 cultivos_hipo_no_afect[1:10,]
 ```
+
 
 
 ```{r}
@@ -343,6 +355,7 @@ sd_med_n_norm["std_err"] = sqrt((sd_med_n_norm$sd_feliz^2)/sd_med_n_norm$n_feliz
 sd_med_n_norm["z"] = sd_med_n_norm$medias_diff/sd_med_n_norm$std_err
 ```
 
+Aqui ya hacemos el estadistico de prueba y guardamos en una tabla si en cada cultivo se acepta ha o no con booleanos.
 
 ```{r}
 #para un alfa de 0.05
@@ -388,7 +401,7 @@ $t = \frac{y_1-y_2-0}{sp \sqrt{\frac{1}{n_1}+\frac{1}{n_2}}}$
 
 $sp = \sqrt{\frac{(n_1-1)s_1^2+(n_2-1)s_2^2}{n_1+n_2-2}}$
 
-
+Trabajamos con la misma hipotesis solo que con distribucion t, e hicimos el mismo procedimiento del codigo de arriba solo que adaptado a la nueva distribucion.
 ```{r}
 sd_med_n_tstudent = sd_med_n[sd_med_n$n_triste < 60,]
 sd_med_n_tstudent = sd_med_n_tstudent[sd_med_n_tstudent$n_feliz  < 60,]
