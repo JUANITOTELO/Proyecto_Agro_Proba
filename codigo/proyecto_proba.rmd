@@ -1,0 +1,389 @@
+---
+title: An R Markdown document converted from "/content/proyecto_proba.ipynb"
+output: html_document
+---
+```{r}
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+# install.packages("ggpubr")
+# library(ggpubr)
+```
+
+```{r}
+mydata <- read.table("/content/cultivos_nacional.csv", header=TRUE, sep=",");
+# mydataf <- read.table("/content/cultivos_nacional_filtrado.csv", header=TRUE, sep=",");
+```
+
+```{r}
+medias_ds_por_a = mydata %>% 
+group_by(P_S6P47B) %>%
+summarise(media_area_sembrada = mean(AREA_SEMBRADA), ds_area_sembrada = sd(AREA_SEMBRADA),
+          media_area_cosechada = mean(AREA_COSECHADA), ds_area_cosechada = sd(AREA_COSECHADA))
+
+medias_ds_por_a_f = mydataf %>% 
+group_by(P_S6P47B) %>%
+summarise(media_area_sembrada_f = mean(AREA_SEMBRADA), ds_area_sembrada_f = sd(AREA_SEMBRADA),
+          media_area_cosechada_f = mean(AREA_COSECHADA), ds_area_cosechada_f = sd(AREA_COSECHADA))
+
+print("Original")
+print(medias_ds_por_a[1:10,])
+print("Filtrada")
+print(medias_ds_por_a_f[1:10,])
+```
+
+```{r}
+tablas = merge(medias_ds_por_a, medias_ds_por_a_f)
+diferencia_filtro = tablas %>%
+summarise(anio = P_S6P47B,
+          dif_media_sembrada = media_area_sembrada - media_area_sembrada_f,
+          dif_ds_sembrada = ds_area_sembrada - ds_area_sembrada_f,
+          dif_media_cosechada = media_area_cosechada - media_area_cosechada_f,
+          dif_ds_cosechada = ds_area_cosechada - ds_area_cosechada_f)
+print(diferencia_filtro[1:10,])
+```
+
+```{r}
+valores_modificados = filter(diferencia_filtro, diferencia_filtro[,2:5] != 0)
+disminucion_valores = filter(valores_modificados, valores_modificados[,2:5] > 0)
+aumento_valores = filter(valores_modificados, valores_modificados[,2:5] < 0)
+print("Valores que cambiaron despues del filtro:")
+print(valores_modificados)
+print(disminucion_valores)
+print(aumento_valores)
+```
+
+```{r}
+# graf <- merge(medias_por_a, destan_por_a)
+print(graf[1:67,2:4])
+print(mydata[1:67,c(1,4,5)])
+```
+
+```{r}
+pdf(file="media-ds-area-sembrada-cosechada-n-smooth.pdf", width=9, height=12)
+mdss = ggplot(graf[4:67,], aes(x=P_S6P47B, y=media_area_sembrada, color=ds_area_sembrada))+labs(color="Desviación Estándar\n",x = "Año", y = "Media de área Sembrada (Ha)", title = "Media y Desviación Estándar del Área Sembrada")+geom_smooth()+geom_point( size = 5, alpha = 1/3)+scale_color_gradient(low = "green", high = "red", na.value = NA)
+mdsc = ggplot(graf[4:67,], aes(x=P_S6P47B, y=media_area_cosechada, color=ds_area_cosechada))+labs(color="Desviación Estándar\n",x = "Año", y = "Media de área Cosechada (Ha)", title = "Media y Desviación Estándar del Área Cosechada")+geom_smooth()+geom_point( size = 5, alpha = 1/3)+scale_color_gradient(low = "green", high = "red", na.value = NA)
+ggarrange(mdss, mdsc, ncol = 1, nrow = 2)
+# png(file="m-area-sembrada-caja.png", width=1090, height=1090)
+# m<-ggplot(graf[45:67,], aes(x=P_S6P47B, y=media_area_sembrada))+labs(x = "Año", y = "Media de área Sembrada (Ha)", title = "Media del Área Sembrada (1990-2013)")
+# m+geom_point()
+
+# png(file="m-sd-area-cosechada.png", width=1090, height=1090)
+# ggplot(graf, aes(x=P_S6P47B, y=media_area_cosechada))+ theme(axis.text = element_text(size = 20)) + theme(axis.title = element_text(size = 40)) + theme(plot.title = element_text(size = 45)) + 
+#      geom_errorbar(aes(ymin=media_area_cosechada-ds_area_cosechada, ymax=media_area_cosechada+ds_area_cosechada), width=.2, ) +
+#      geom_line() +
+#     geom_point() + labs(x = "Año", y = "Media de área cosechada (Ha)", title = "Media y Desviación Estándar del Área Cosechada")
+```
+
+```{python}
+!Rscript /content/diferencia_filtro.r
+```
+
+```{r}
+pdf(file="dif-media-ds-area-sembrada-cosechada-smooth.pdf", width=9, height=16)
+mdss = ggplot(diferencia_filtro[4:67,], aes(x=anio, y=dif_media_sembrada, color=dif_ds_sembrada))+labs(color="Diferencia Desviación Estándar\n",x = "Año", y = "Diferencia Media de área Sembrada (Ha)", title = "Diferencia Media y Desviación Estándar del Área Sembrada")+geom_point( size = 5, alpha = 1/2)+scale_color_gradient(low = "blue", high = "green", na.value = NA)
+mdsc = ggplot(diferencia_filtro[4:67,], aes(x=anio, y=dif_media_cosechada, color=dif_ds_cosechada))+labs(color="Diferencia Desviación Estándar\n",x = "Año", y = "Diferencia Media de área Cosechada (Ha)", title = "Diferencia Media y Desviación Estándar del Área Cosechada")+geom_point( size = 5, alpha = 1/2)+scale_color_gradient(low = "blue", high = "green", na.value = NA)
+ggarrange(mdss, mdsc, ncol = 1, nrow = 2)
+```
+
+```{r}
+cultivos_code2name <- read.table("/gdrive/MyDrive/Proyecto_Probabilidad/probabilidad/equivalencias_cultivos_code.csv", sep=",", header=TRUE)
+dep_names = read.table("/gdrive/MyDrive/Proyecto_Probabilidad/probabilidad/codigo_depto_a_nombre.csv",sep=",", header=TRUE)
+regre <- read.table("/gdrive/MyDrive/Proyecto_Probabilidad/probabilidad/cultivos_nacional_filtrado.csv", sep=",", header=TRUE)
+```
+
+```{r}
+tabla_platano <- filter(regre, P_S6P46==codigo_platano)
+print(tabla_platano[1:10,])
+```
+
+```{r}
+ggplot(tabla_platano, aes(x=P_DEPTO, y=P_S6P59_UNIF))+labs(x = "Año", y = "Rendimiento", title = "Rendimiento por Años")+geom_point(alpha = 1/2) # +scale_color_gradient(low = "blue", high = "green", na.value = NA)
+```
+
+```{r}
+choco_afectado <- filter(regre, P_DEPTO == 27 & P_S6P60 != 12)
+print(choco_afectado[0:10,])
+san_provi_afectado <- filter(regre, P_DEPTO == 88 & P_S6P60 != 12)
+print(san_provi_afectado[0:10,])
+```
+
+# Choco
+
+```{r}
+df_choco_afectado <- as.data.frame(choco_afectado)
+print(na.omit(df_choco_afectado[1:25,]))
+frec_choco_afectado <- count(df_choco_afectado,choco_afectado$P_S6P46)
+frec_choco_afectado <- na.omit(frec_choco_afectado)
+frec_choco_afectado <- arrange(frec_choco_afectado,desc(n))
+print(frec_choco_afectado[1:10,])
+ggplot(choco_afectado, aes(x=P_S6P47B, y=P_S6P59_UNIF))+labs(x = "Rendimiento", y = "Area Cosechada", title = "Rendimiento por Area Cosechada")+geom_point(alpha = 1/2) # +scale_color_gradient(low = "blue", high = "green", na.value = NA)
+```
+
+# San Andres y Providencia
+
+```{r}
+df_san_provi_afectado <- as.data.frame(san_provi_afectado)
+frec_san_provi_afectado <- count(df_san_provi_afectado,san_provi_afectado$P_S6P46)
+frec_san_provi_afectado <- na.omit(frec_san_provi_afectado)
+frec_san_provi_afectado <- arrange(frec_san_provi_afectado,desc(n))
+print(frec_san_provi_afectado[1:10,])
+ggplot(san_provi_afectado, aes(x=P_S6P59_UNIF, y=AREA_COSECHADA))+labs(x = "Rendimiento", y = "Area Cosechada", title = "Rendimiento por Area Cosechada")+geom_point(alpha = 1/2) # +scale_color_gradient(low = "blue", high = "green", na.value = NA)
+
+```
+
+```{r}
+busqueda_cultivo_choco <- filter(cultivos_code2name, cultivo_id == 131301001)
+print(busqueda_cultivo_choco)
+busqueda_cultivo_pro <- filter(cultivos_code2name, cultivo_id == 159201001)
+print(busqueda_cultivo_pro)
+```
+
+```{r}
+df_dep_names = as.data.frame(dep_names)
+colnames(df_dep_names) = c("departamento","nombre_departamento")
+
+#Total del area sembrada desde 1920 hasta 2013 de cada departamento
+suma_areas_sembradas = regre %>%
+group_by(P_DEPTO) %>%
+summarise(total_cultivado=sum(AREA_SEMBRADA))
+df_suma_areas_sembradas = as.data.frame(suma_areas_sembradas)
+
+df_suma_areas_sembradas = arrange(df_suma_areas_sembradas,desc(total_cultivado))
+colnames(df_suma_areas_sembradas) <- c("departamento", "total_cultivos")
+df_suma_areas_sembradas = na.omit(df_suma_areas_sembradas)
+df_merge_suma_areas_sembradas = filter(df_suma_areas_sembradas, departamento != 63)
+df_merge_suma_areas_sembradas = merge(df_merge_suma_areas_sembradas,df_dep_names,by="departamento")
+print(df_merge_suma_areas_sembradas[,-c(1)])
+#---------------------------------------------------------------------
+
+# Total cultivos afectados
+afectados = filter(regre,P_S6P60 != 12) #Elimina de la tabla los cultivos que no fueron afectados
+
+# Calculo de el area perdida 
+# (le restamos al area sembrada el area cosechada, para encontrar cuanto se perdio en cada reporte)
+diferencia_areas <- afectados %>%
+summarise(afectacion = P_S6P60,departamento = P_DEPTO,res_area = AREA_SEMBRADA-AREA_COSECHADA)
+# print(diferencia_areas[1:10,])
+
+# Total de area perdida (desde 1920 hasta 2013) de departamento 
+# (Sumamos todas las perdidas de la anterior tabla para encontrar el total de area perdida)
+suma_diferencia_areas = diferencia_areas %>%
+group_by(departamento) %>%
+summarise(total_afectado=sum(res_area))
+
+df_suma_diferencia_areas = as.data.frame(suma_diferencia_areas)
+df_suma_diferencia_areas = arrange(df_suma_diferencia_areas,desc(total_afectado))
+df_suma_diferencia_areas = na.omit(df_suma_diferencia_areas)
+df_suma_diferencia_areas = na.omit(full_join(df_suma_diferencia_areas,df_dep_names,by="departamento"))
+print(df_suma_diferencia_areas[,-c(1)])
+
+# Union de tablas
+u_tablas = merge(df_merge_suma_areas_sembradas, df_suma_diferencia_areas, by = "departamento")
+porcentajes_departamentos = u_tablas %>%
+summarise(departamento,porcentaje_afectado=round((total_afectado*100)/total_cultivos, digits=5))
+porcentajes_departamentos = merge(porcentajes_departamentos,df_dep_names[-c(19),],by="departamento")
+porcentajes_departamentos = arrange(porcentajes_departamentos,desc(porcentaje_afectado))
+print(porcentajes_departamentos[,-c(1)])
+
+# pdf(file="area_afectada_nacional.pdf", width=9, height=8)
+# ggplot(df_suma_diferencia_areas, aes(x=nombre_departamento, y=total_afectado, fill=total_afectado))+geom_bar(stat="identity")+ coord_flip()+labs(colors="Area afectada\n",x = "Departamento", y = "Area afectada", title = "Area de los cultivos de los departamentos afectados")
+```
+
+```{r}
+
+cultivos_sembrados <- function(df){
+  suma_areas_sembradas = df %>%
+  group_by(P_S6P46) %>%
+  summarise(total_cultivado=sum(AREA_SEMBRADA))
+
+  df_suma_areas_sembradas = as.data.frame(suma_areas_sembradas)
+  df_suma_areas_sembradas = arrange(df_suma_areas_sembradas,desc(total_cultivado))
+  colnames(df_suma_areas_sembradas) <- c("cultivo_id", "total_cultivos")
+  df_suma_areas_sembradas = na.omit(df_suma_areas_sembradas)
+  df_merge_suma_areas_sembradas = filter(df_suma_areas_sembradas)
+  # print(df_merge_suma_areas_sembradas[1:10,]) #------------------
+  #---------------------------------------------------------------------
+  graf_afectadas = full_join(df_merge_suma_areas_sembradas, cultivos_code2name, by="cultivo_id")
+  graf_afectadas = na.omit(graf_afectadas)
+}
+
+afec_por_cultivo <- function(afec) {
+  # Calculo de el area perdida
+  # (le restamos al area sembrada el area cosechada, para encontrar cuanto se perdio en cada reporte)
+  diferencia_areas <- afec %>%
+  summarise(afectacion = P_S6P60,cultivo_id = P_S6P46,res_area = AREA_SEMBRADA-AREA_COSECHADA)
+  # print(diferencia_areas[1:10,])
+
+  # Total de area perdida (desde 1920 hasta 2013) de cultivo_id
+  # (Sumamos todas las perdidas de la anterior tabla para encontrar el total de area perdida)
+  suma_diferencia_areas = diferencia_areas %>%
+  group_by(cultivo_id) %>%
+  summarise(total_afectado=sum(res_area))
+
+  df_suma_diferencia_areas = as.data.frame(suma_diferencia_areas)
+  df_suma_diferencia_areas = arrange(df_suma_diferencia_areas,desc(total_afectado))
+  df_suma_diferencia_areas = na.omit(df_suma_diferencia_areas)
+  # print(df_suma_diferencia_areas[1:10,]) #------------------
+  graf_afectadas = full_join(df_suma_diferencia_areas, cultivos_code2name, by="cultivo_id")
+  graf_afectadas = na.omit(graf_afectadas)
+
+  # Union de tablas
+  # u_tablas = merge(df_merge_suma_areas_sembradas, df_suma_diferencia_areas, by = "departamento")
+  # porcentajes_departamentos = u_tablas %>%
+  # summarise(departamento,porcentaje_afectado=round((total_afectado*100)/total_cultivos, digits=5))
+  # porcentajes_departamentos = merge(porcentajes_departamentos,df_dep_names[-c(19),],by="departamento")
+  # porcentajes_departamentos = arrange(porcentajes_departamentos,desc(porcentaje_afectado))
+  # print(porcentajes_departamentos[,-c(1)])
+}
+```
+
+```{r}
+cat("total nacional\n \n")
+total_semb_nacional <- cultivos_sembrados(regre)
+print(total_semb_nacional[1:10,])
+
+cat("\n total afectado nacional \n \n")
+afectados = filter(regre,P_S6P60 != 12)
+# print(afectados[1:10,])
+nacional_afec <- afec_por_cultivo(afectados)
+print(nacional_afec[1:10,])
+pdf(file="afectado_cultivo_nacional.pdf", width=9, height=8)
+ggplot(nacional_afec[1:10,], aes(x=nombre, y=total_afectado, fill=total_afectado))+geom_bar(stat="identity")+ coord_flip()+labs(colors="Area afectada\n",x = "Cultivo", y = "Area afectada", title = "Top 10 cultivos mas afectados por area nacional")
+```
+
+```{python}
+!Rscript /content/pr1.r
+```
+
+```{r}
+graf_sembradas = full_join(df_merge_suma_areas_sembradas, cultivos_code2name, by="cultivo_id")
+graf_sembradas = na.omit(graf_sembradas)
+print(graf_sembradas[1:10,])
+
+graf_afectadas = full_join(df_suma_diferencia_areas, cultivos_code2name, by="cultivo_id")
+graf_afectadas = na.omit(graf_afectadas)
+print(graf_afectadas[1:10,])
+
+graf_porcentajes = full_join(porcentajes_cultivo_ids, cultivos_code2name, by="cultivo_id")
+graf_porcentajes = na.omit(graf_porcentajes)
+print(graf_porcentajes[1:15,])
+```
+
+```{r}
+df_afectados <- as.data.frame(afectados)
+archi <- filter(regre, P_DEPTO == 25)
+
+afectado_archi <- afec_por_cultivo(archi)
+print(afectado_archi[1:10,])
+
+# pdf(file="porcentaje_afectado_cultivo_archipielago.pdf", width=9, height=8)
+# ggplot(afectado_archi[1:10,], aes(x=nombre, y=total_afectado, fill=total_afectado))+geom_bar(stat="identity")+ coord_flip()+labs(colors="Porcentaje afectado\n",x = "Cultivo", y = "Porcentaje afectado", title = "Top 10 cultivos mas afectados por area Archipielago")
+```
+
+```{r}
+choco <- filter(regre, P_DEPTO == 52)
+
+afectado_choco <- afec_por_cultivo(choco)
+print(afectado_choco[1:10,])
+```
+
+```{r}
+graf_barra <- function(df,eje_x,eje_y){
+    ggplot(data=df, aes(x=eje_x, y=eje_y, fill=eje_x)) + 
+    geom_bar(stat="identity", position="dodge")
+}
+graf_puntos <- function(df,eje_x,eje_y, ex_color){
+    ggplot(data=df, aes(x=eje_x, y=eje_y, color=ex_color)) + 
+    geom_point(size = 5, alpha = 1/2) + scale_color_gradientn(colours = rainbow(12))
+}
+```
+
+```{r}
+# print(archi[1:10,])
+afec_archi_graf = filter(archi, P_S6P46==159201001)
+print(afec_archi_graf[1:10,])
+
+graf_puntos(afec_archi_graf,afec_archi_graf$P_S6P59_UNIF, afec_archi_graf$AREA_COSECHADA, afec_archi_graf$P_S6P60)+labs(x="x", y="y", color="afec\n", title="Regre")
+```
+
+```{r}
+# Total cultivos afectados
+afectados = filter(regre,P_S6P60 != 12) #Elimina de la tabla los cultivos que no fueron afectados
+
+cultivo_nacional_afectado <- afec_por_cultivo(afectados)
+```
+
+```{python}
+!Rscript /content/regre_lin.r
+```
+
+```{r}
+graf_puntos(afectados, afectados$P_S6P59_UNIF,afectados$AREA_SEMBRADA, afectados$P_S6P60)+labs(x="x", y="y", color="afec\n", title="Regre")
+```
+
+```{r}
+regre_lin <- function(ex_data,ex_x,ex_y, ex_color){
+    lm.fit <- lm(data= ex_data,ex_y ~ ex_x,na.action=na.exclude)
+    sumar = summary(lm.fit)
+    # cat("\n")
+    # ggplot(ex_data, aes(x=ex_x, y=ex_y,color=ex_color))+geom_smooth(method="lm", colour = "red")+ 
+    # geom_point(size = 5, alpha = 1/3) + scale_color_gradientn(colours = rainbow(5))
+}
+
+#       29.418644      Yuca 
+# 2         11.271970    Banano 
+# 3         10.615705   Ahuyama 
+# 4          7.851949       Piña
+# 5          7.008000      Ñame 
+
+code = 151001001
+choco <- as.data.frame(afectados[ afectados$P_S6P46 == code,])
+cultivos = cultivos_code2name[,c(1)]
+for (i in cultivos){
+    choco <- as.data.frame(afectados[ afectados$P_S6P46 == i,])
+    if(all(is.na(choco[1,1]))){
+        cat("Esta vacio\n")
+    }else{
+        choco <- na.omit(choco)
+        print(regre_lin(choco, choco$AREA_SEMBRADA, choco$P_S6P59_UNIF, choco$P_S6P47B)$r.squared)
+    }
+    # print(regre_lin(choco, choco$AREA_SEMBRADA, choco$P_S6P59_UNIF, choco$P_S6P47B)$r.squared)
+}
+# print(regre_lin(choco, choco$AREA_SEMBRADA, choco$P_S6P59_UNIF, choco$P_S6P47B)$r.squared)
+```
+
+```{r}
+print(cultivos_code2name[1,])
+```
+
+```{r}
+regre_exp <- function(ex_data,ex_x,ex_y, ex_color){
+    lm.fit <- lm(data= ex_data,log(ex_y) ~ ex_x)
+    cat("Regresion log \n \n")
+    print(summary(lm.fit))
+    cat("\n")
+    # ggplot(ex_data, aes(x=ex_x, y=ex_y,color=ex_color))+geom_smooth(method="lm", colour = "red")+ 
+    # geom_point(size = 5, alpha = 1/5) + scale_color_gradientn(colours = rainbow(6))
+}
+choco <- as.data.frame(afectados[afectados$P_DEPTO==25,])
+choco <- na.omit(choco)
+regre_exp(choco, choco$P_S6P47B, choco$AREA_COSECHADA, choco$P_S6P47B)
+
+print(exp(1))
+```
+
+```{r}
+regre_pol <- function(ex_data,ex_x,ex_y, ex_color){
+    lm.fit <- lm(data= ex_data,log(ex_y) ~ poly(ex_x,2))
+    cat("Regresion log \n \n")
+    print(summary(lm.fit))
+    cat("\n")
+    # ggplot(ex_data, aes(x=ex_x, y=ex_y,color=ex_color))+geom_smooth(method="exp", colour = "red")+ 
+    # geom_point(size = 5, alpha = 1/5) + scale_color_gradientn(colours = rainbow(6))
+}
+choco <- as.data.frame(afectados[afectados$P_DEPTO==25,])
+choco <- na.omit(choco)
+regre_pol(choco, choco$P_S6P47B, choco$AREA_COSECHADA, choco$P_S6P47B)
+```
+
