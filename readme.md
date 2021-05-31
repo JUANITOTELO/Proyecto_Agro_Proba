@@ -17,7 +17,9 @@ estadístico en R.
 
 ## Estructura del repositorio: 
 
-* codigo\_depto\_a\_nombre.csv *(tabla que relaciona el código de un departamento con su nombre)*.
-* codigo\_fenomenos.csv *(relaciona el código numérico del fenómeno de afectación del cultivo, con el nombre de  esta afectación)*.
-* documentos contiene el comprimido 'cultivos\_nacional.zip' que contiene todos los datos de las afectaciones de cultivos a nivel nacional.
+* Codigo\_depto\_a\_nombre.csv *(tabla que relaciona el código de un departamento con su nombre)*.
+* Codigo\_fenomenos.csv *(relaciona el código numérico del fenómeno de afectación del cultivo, con el nombre de  esta afectación)*.
+* Documentos contiene el comprimido 'cultivos\_nacional.zip' que contiene todos los datos de las afectaciones de cultivos a nivel nacional.
+* Equivalencias\_cultivos\_code.csv *(csv que relaciona los nombres de los cultivos con su código numérico)*
+
 
