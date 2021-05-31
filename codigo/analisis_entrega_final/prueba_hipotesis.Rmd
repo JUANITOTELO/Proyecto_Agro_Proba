@@ -1,0 +1,464 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+seteo del directorio de trabajo actual, use su ruta a la carpeta del repositorio
+
+```{r setup, include=FALSE, echo=FALSE}
+require("knitr")
+  opts_knit$set(root.dir = "/Users/Dave/Documents/Univ/proba_estadistica/Proyecto_Agro_Proba")
+```
+
+
+Instalación y cargado de la librería necesaria para hacer el conteo 
+de frecuencias de variable categórica
+
+```{r}
+install.packages('plyr')
+library(plyr)
+library(ggplot2)
+```
+
+## Cargado del csv principal para los análisis
+
+```{r}
+cultivos <- read.table("./documentos/cultivos_nacional_filtrado.csv", sep=",", header=TRUE)
+
+head(cultivos)
+```
+
+
+```{r}
+#
+#selección de las columnas que nos interesan para este análisis inicial
+cultivos_sub_top10 <- subset(cultivos, select=c("P_S6P46", "P_S6P60"))
+cultivos_sub_top10 = data.frame(cultivos_sub_top10)
+
+head(cultivos_sub_top10)
+```
+
+
+```{r}
+#
+# selección de todos los cultivos afectados
+
+cultivos_afectados <- cultivos_sub_top10[cultivos_sub_top10$P_S6P60 != 12,]
+head(cultivos_afectados)
+
+```
+
+
+```{r}
+#
+# cuenta la cantidad de cultivos afectados para cada tipo de cultivo
+
+freqs_cult_afect <- count(cultivos_afectados, "P_S6P46")
+freqs_cult_afect <- freqs_cult_afect[order(-freqs_cult_afect$freq),]
+freqs_cult_afect[0:10,]
+```
+
+
+## carga de csv para obtener equivalencias de código de cultivo a nombre del cultivo
+
+```{r}
+cultivos_code2name <- read.table("./documentos/equivalencias_cultivos_code.csv", sep=",", header=TRUE)
+
+head(cultivos_code2name)
+```
+
+```{r}
+# ahora se hace el merge entre las 2 tablas para poder conocer los nombres del top 10 
+# de los cultivos más afectados
+
+freqs_cult_afect_nombre = merge(x = cultivos_code2name, y=freqs_cult_afect, by = "P_S6P46", all=FALSE)
+freqs_cult_afect_nombre = freqs_cult_afect_nombre[order(-freqs_cult_afect_nombre$freq),]
+freqs_cult_afect_nombre[0:10,]
+```
+
+
+```{r}
+
+# generación de la imagen del reporte, para solo verla en vez de guardarla como pdf 
+# comente la linea que invoca a la función pdf
+
+#pdf(file = "./documentos/graficas_entrega_final/Cantidad de cultivos afectados (nivel nacional) (top 10).pdf")
+p <- ggplot(data = freqs_cult_afect_nombre[0:10,], aes(x=nombre, y=freq, fill=freq)) + geom_bar(stat="identity", color="black") +
+     coord_flip() 
+p <- p + labs(title="Cantidad de cultivos afectados (nivel nacional) (top 10)", x="Cultivo", y = "Cantidad de cultivos afectados")
+p  + theme_minimal()
+```
+
+# Prueba de hipótesis para la diferencia de medias entre rendimientos de cultivos afectados y no afectados
+
+
+```{r}
+#
+# selección de las columnas que nos interesan para este análisis inicial
+
+cultivos_hipo <- subset(cultivos, select=c("P_S6P46", "P_S6P60", "P_S6P59_UNIF"))
+cultivos_hipo = data.frame(cultivos_hipo)
+
+head(cultivos_hipo)
+
+```
+
+
+```{r}
+# selección de los cultivos afectados y los no afectados en grupos distintos
+# y borrado de los NA en la columna P_S6P59_UNIF -> 'rendimientos', 
+# también borra las filas que no tienen código de cultivo
+
+
+cultivos_hipo_afect <- cultivos_hipo[(cultivos_hipo$P_S6P60 != 12),]
+cultivos_hipo_afect <- cultivos_hipo_afect[complete.cases(cultivos_hipo_afect[,3]),]
+cultivos_hipo_afect <- cultivos_hipo_afect[complete.cases(cultivos_hipo_afect[,1]),]
+
+cultivos_hipo_no_afect <- cultivos_hipo[(cultivos_hipo$P_S6P60 == 12),]
+cultivos_hipo_no_afect <- cultivos_hipo_no_afect[complete.cases(cultivos_hipo_no_afect[,3]),]
+cultivos_hipo_no_afect <- cultivos_hipo_no_afect[complete.cases(cultivos_hipo_no_afect[,1]),]
+
+head(cultivos_hipo_no_afect)
+```
+
+
+```{r}
+#
+#obtención de los nombres correspondientes a los códigos de cultivo
+
+cultivos_hipo_no_afect = merge(x = cultivos_code2name, y=cultivos_hipo_no_afect, by = "P_S6P46", all=FALSE)
+cultivos_hipo_afect = merge(x = cultivos_code2name, y=cultivos_hipo_afect, by = "P_S6P46", all=FALSE)
+
+head(cultivos_hipo_afect)
+
+```
+
+
+```{r}
+
+#toma únicamente los dátos del cultivo de plátano, tanto los datos de los cultivos afectados
+#como los que no fueron afectados
+
+platano_triste = cultivos_hipo_afect[cultivos_hipo_afect$nombre == "Platano ",]
+platano_feliz = cultivos_hipo_no_afect[cultivos_hipo_no_afect$nombre == "Platano ",]
+
+head(platano_feliz)
+```
+
+
+```{r}
+#obtiene la cantidad de cultivos 
+#para el grupo de plátanos afectados y no afectados
+
+n1 = count(platano_feliz, "nombre")[,"freq"]
+n2 = count(platano_triste, "nombre")[,"freq"]
+
+print(c(n1,n2))
+```
+
+
+```{r}
+#
+#Calcula las medias de rendimiento del plátano no afectado y el afectado
+#
+
+mu_1 = mean(platano_feliz[,"P_S6P59_UNIF"])
+mu_2 = mean(platano_triste[,"P_S6P59_UNIF"])
+
+print(c(mu_1, mu_2))
+```
+
+
+```{r}
+#
+#Calcula las desviaciones estándar de rendimiento del plátano no afectado y el afectado
+#
+
+sd_1 = sd(platano_feliz[,"P_S6P59_UNIF"])
+sd_2 = sd(platano_triste[,"P_S6P59_UNIF"])
+
+print(c(sd_1, sd_2))
+```
+
+
+cálculo del estadístico de prueba (dado el tamaño de n se puede normalizar).
+
+$\alpha = 0.05$
+
+$h_o: \mu_1 - \mu_2 = 0$ 
+
+$h_a: \mu_1 - \mu_2 \neq 0$ 
+
+$RR: \{z: |z| > z_{\alpha/2} \}$
+
+
+```{r}
+std_err = sqrt( ((sd_1^2)/n1) + ((sd_2^2)/n2) )
+std_err
+```
+
+```{r}
+z_alfa_med = qnorm(1-0.025)
+z = ( (mu_1 - mu_2) - (0))/std_err
+
+print(c(z_alfa_med, z))
+```
+#### Intervalo de confianza
+
+$\hat{\theta} \pm  z_{\alpha/2} \cdot \sigma_{\hat{\theta}}$
+
+```{r}
+intervalo_conf = c(z - z_alfa_med *std_err, z + z_alfa_med *std_err)
+print(intervalo_conf)
+```
+Al analizar que este intervalo de confianza está por mucho dentro del rango positivo vemos que, $\mu_1 > \mu_2$, es decir que un cultivo no afectado tiene mejores rendimientos
+
+
+```{r}
+p_valor = pnorm(z, lower.tail =FALSE)*2
+print(p_valor)
+```
+
+### Con lo anterior rechazamos rotundamente que la diferencia de medias es cero, luego que un cultivo se vea afectado por algún factor ambiental incide en su rendimiento 
+
+## cálculo del error $\beta$
+
+```{r}
+
+diff_alt = 6*std_err
+print(diff_alt)
+
+k = (z_alfa_med * std_err) + 0
+print(k)
+
+pnorm( (k- 6*std_err)/std_err )
+```
+
+
+Se puede concluir que con total certeza hay una diferencia considerable en las medias, al todos los parametros probabilisticos que hallamos decir que hay que rechazar rotundamente H0. Ademas por la naturaleza de los resultados se puede decir que M1 es mayor a M2 con total certeza, por lo cual podemos decir que definitivamente hay una reduccion en el rendimiento de los cultivos de Platano cuando son afectados por algun agente externo negativo.
+
+-----
+
+A partir de aqui haremos esta misma prueba de hipotesis pero para todas las especies de cultivos.
+
+```{r}
+cultivos_hipo_no_afect[1:10,]
+```
+
+
+```{r}
+#
+#obtiene los tamaños poblacionales para los cultivos afectados y no afectados según el nombre del cultivo 
+
+n_afect = aggregate(cultivos_hipo_afect$P_S6P59_UNIF, list(cultivos_hipo_afect$nombre), length)
+n_no_afect = aggregate(cultivos_hipo_no_afect$P_S6P59_UNIF, list(cultivos_hipo_no_afect$nombre), length)
+
+n_afect = rename(n_afect, replace = c("x" = "n_triste"))
+n_no_afect = rename(n_no_afect, replace = c("x" = "n_feliz"))
+
+n_afect[1:10,]
+```
+
+
+```{r}
+n_cults = merge(x = n_afect, y= n_no_afect, by = "Group.1", all=FALSE)
+n_cults[1:10,]
+```
+
+
+```{r}
+medias_afect = aggregate(cultivos_hipo_afect[,4], list(cultivos_hipo_afect$nombre), mean, na.rm=TRUE)
+sd_afect = aggregate(cultivos_hipo_afect[,4], list(cultivos_hipo_afect$nombre), sd, na.rm=TRUE)
+
+medias_afect = rename(medias_afect, replace = c("x" = "y_bar_triste"))
+sd_afect = rename(sd_afect, replace = c("x" = "sd_triste"))
+
+medias_afect[1:4,]
+sd_afect[1:4,]
+```
+
+
+```{r}
+medias_no_afect = aggregate(cultivos_hipo_no_afect[,4], list(cultivos_hipo_no_afect$nombre), mean, na.rm=TRUE)
+sd_no_afect = aggregate(cultivos_hipo_no_afect[,4], list(cultivos_hipo_no_afect$nombre), sd, na.rm=TRUE)
+
+medias_no_afect = rename(medias_no_afect, replace = c("x" = "y_bar_feliz"))
+sd_no_afect = rename(sd_no_afect, replace = c("x" = "sd_feliz"))
+
+
+medias_no_afect[1:4,]
+sd_no_afect[1:4,]
+```
+
+
+```{r}
+medias_rendimiento = merge(x = medias_afect, y= medias_no_afect, by = "Group.1", all=FALSE)
+medias_rendimiento[1:4,]
+```
+
+```{r}
+sd_rendimiento = merge(x = sd_afect, y= sd_no_afect, by = "Group.1", all=FALSE)
+sd_rendimiento = sd_rendimiento[complete.cases(sd_rendimiento[,3]),]
+sd_rendimiento[1:4,]
+```
+
+```{r}
+sd_med_rend = merge(x = sd_rendimiento, y= medias_rendimiento, by = "Group.1", all=FALSE)
+sd_med_rend[1:10,]
+```
+
+
+```{r}
+sd_med_n =  merge(x = n_cults, y= sd_med_rend, by = "Group.1", all=FALSE)
+sd_med_n[1:4,]
+```
+
+```{r}
+medias_diff = sd_med_n["y_bar_feliz"] - sd_med_n["y_bar_triste"]
+sd_med_n["medias_diff"] = medias_diff
+sd_med_n[1:4,]
+```
+
+
+```{r}
+#borrado de los na que impiden calcular
+sd_med_n = sd_med_n[complete.cases(sd_med_n[,4]),]
+
+#selección de los cultivos que son normalizables 
+#dado que tienen n > 40
+sd_med_n_norm = sd_med_n[sd_med_n$n_triste > 60,]
+sd_med_n_norm = sd_med_n_norm[sd_med_n_norm$n_feliz > 60,]
+
+sd_med_n_norm[1:4,]
+```
+
+```{r}
+
+sd_med_n_norm["std_err"] = sqrt((sd_med_n_norm$sd_feliz^2)/sd_med_n_norm$n_feliz + 
+                                (sd_med_n_norm$sd_triste^2)/sd_med_n_norm$n_triste)
+```
+
+
+```{r}
+sd_med_n_norm["z"] = sd_med_n_norm$medias_diff/sd_med_n_norm$std_err
+```
+
+
+```{r}
+#para un alfa de 0.05
+alfa_med = 0.05
+z_alfa = qnorm(alfa_med)
+
+sd_med_n_norm["aceptar_ha"] = sd_med_n_norm$z < z_alfa
+sd_med_n_norm["p_valor"] = pnorm((sd_med_n_norm$z), lower.tail = TRUE)
+
+
+sd_med_n_norm["aceptar_ha(p_val)"] = sd_med_n_norm$p_valor < alfa_med
+#aceptar_p
+```
+
+```{r}
+z_final = sd_med_n_norm[,c("Group.1","aceptar_ha","aceptar_ha(p_val)", "z")]
+z_final
+```
+
+```{r}
+#calcular el porcentaje de todos los cultivos para los cuales se cumple
+#la hipótesis alternativa
+
+total = length(sd_med_n_norm$Group.1)
+
+sis = sd_med_n_norm[sd_med_n_norm$aceptar_ha == TRUE,]
+sis = length(sis$Group.1)
+
+ratio_ha_aceptada = sis*100/total
+ratio_ha_aceptada 
+```
+
+
+
+
+-----
+
+A partir de aqui haremos la distribucion t con aquellos cultivos con n menos a 60. Los de mayor a 60 ya les hicimos la prueba z.
+
+
+
+$t = \frac{y_1-y_2-0}{sp \sqrt{\frac{1}{n_1}+\frac{1}{n_2}}}$
+
+$sp = \sqrt{\frac{(n_1-1)s_1^2+(n_2-1)s_2^2}{n_1+n_2-2}}$
+
+
+```{r}
+sd_med_n_tstudent = sd_med_n[sd_med_n$n_triste < 60,]
+sd_med_n_tstudent = sd_med_n_tstudent[sd_med_n_tstudent$n_feliz  < 60,]
+
+sd_med_n_tstudent[1:4,]
+```
+
+```{r}
+sd_med_n_tstudent["df"] = sd_med_n_tstudent$n_feliz + sd_med_n_tstudent$n_triste - 2
+
+sd_med_n_tstudent["sp"] = sqrt(((sd_med_n_tstudent$n_feliz-1)*(sd_med_n_tstudent$sd_feliz)^2 + (sd_med_n_tstudent$n_triste-1)*(sd_med_n_tstudent$sd_triste)^2)/
+                               (sd_med_n_tstudent$df))
+```
+
+Cálculo de la ***t-student***:
+
+```{r}
+sd_med_n_tstudent["tstudent"] = (sd_med_n_tstudent$medias_diff)/(sd_med_n_tstudent$sp*(sqrt((1/sd_med_n_tstudent$n_feliz) +(1/sd_med_n_tstudent$n_triste))))
+```
+
+Se calculan los ***p-valores*** y si según este y el valor del estadísitico de prueba, se debe o no 
+rechazar la hipótesis nula.
+
+```{r}
+#para un alfa de 0.05
+alfa_med_tstudent = 0.05
+tstudent_alfa = qt(alfa_med_tstudent, df = sd_med_n_tstudent$df)
+
+sd_med_n_tstudent["aceptar_ha"] = sd_med_n_tstudent$tstudent < tstudent_alfa
+sd_med_n_tstudent["p_valor"] = pt((sd_med_n_tstudent$tstudent), df = sd_med_n_tstudent$df, lower.tail = TRUE)
+
+
+sd_med_n_tstudent["aceptar_ha(p_val)"] = sd_med_n_tstudent$p_valor < alfa_med
+```
+
+
+```{r}
+tstudent_final = sd_med_n_tstudent[,c("Group.1","aceptar_ha","aceptar_ha(p_val)", "tstudent")]
+tstudent_final[1:4,]
+```
+
+guardar archivo de los datos como csv:
+```{r}
+#
+write.csv(x = z_final, file = "./documentos/Tablas_PdH/Tabla_PdHMedias_Z.csv", row.names = TRUE)
+write.csv(x = tstudent_final, file = "./documentos/Tablas_PdH/Tabla_PdHMedias_Tstudent.csv", row.names = TRUE)
+```
+
+*Ahora a partir de aqui graficamos las proporciones de la prueba de hipotesis *
+
+
+```{r}
+tstudent_final_porcentaje = tstudent_final[,c("Group.1","aceptar_ha")]
+z_final_porcentaje = z_final[,c("Group.1","aceptar_ha")]
+
+tabla_porcentaje = rbind(tstudent_final_porcentaje, z_final_porcentaje)
+tabla_porcentaje
+```
+
+```{r}
+
+porcentaje_h0 = round((51 * 100 / 74), 0)
+porcentaje_ha = round((23 * 100 / 74), 0)
+#pdf("./documentos/graficas_entrega_final/Piecharthipotesis.pdf")
+pie(table(tabla_porcentaje$aceptar_ha), labels = paste0(c(porcentaje_h0, porcentaje_ha), "%"), main = ("Porcentajes sobre la prueba de hipotesis"))
+
+legend("topleft", legend = c("Aceptamos H0", "Aceptamos Ha"),
+       fill =  c("white", "lightblue"))
+```
+
+
+
+
